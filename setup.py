@@ -17,7 +17,8 @@ setuptools.setup(name='CP2Kscripts',
                   'shift_coord = CP2Kscripts.shift_coord:main',
                   'thermo = CP2Kscripts.thermo:main',
                   'gibbs_molecules = CP2Kscripts.gibbs_molecules:main',
-                  'vib_list = CP2Kscripts.vib_list:main'
+                  'vib_list = CP2Kscripts.vib_list:main',
+                  'ldos = CP2Kscripts.ldos:main'
                   ]},
                  url="https://github.com/Mona-Abdelgaid/CP2Kscripts",
                  python_requires='>=3.6',

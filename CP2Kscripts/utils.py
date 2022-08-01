@@ -7,9 +7,11 @@ os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
 from sys import argv
 import math
+from math import pi, sqrt
 import ase.io
 import ase
 from ase import atoms
+import matplotlib.pyplot as plt
 from ase.thermochemistry import HarmonicThermo, IdealGasThermo
 import ase.units
 #=======================================================================
@@ -299,3 +301,186 @@ def thermo(vib_list,temp):
         print(f'{name}{val:>{space}.9f} {lbl}')
     print(line)
 #=======================================================================
+
+def ldos(file):
+    #Localized electronic density of states from CP2K output files
+    # code is written by Evan V. Miu
+    # initialize empty variable
+    E = []
+    occ =[]
+    s =[]
+    p =[]
+    d =[]
+
+    # open file
+    with open(file) as f:
+        
+        # read first line of file
+        data = f.readline().split()
+        
+        # store Fermi energy
+        E_Fermi = float(data[-2])
+        
+        # skip second line
+        _ = f.readline()
+        
+        # iterate through all remaining lines
+        for x in f:
+            
+            # read data
+            data = x.split()
+            
+            # parse data into variables
+            E.append(float(data[1]))
+            occ.append(float(data[2]))
+            s.append(float(data[3]))
+            p.append(float(data[4]))
+            d.append(float(data[5]))
+
+    # format data as arrays for plotting
+    Eigenvalue = np.array(E)
+    Occupation = np.array(occ)
+    sband = np.array(s)
+    pband = np.array(p)
+    dband = np.array(d)
+    #print (sband)
+    #print (sband[0])
+
+    # band center calculations
+    # initialize empty variables
+    # first index is occupied, second is unoccupied
+    s_weights = np.zeros((int(Eigenvalue.shape[-1]),2))
+    p_weights = np.zeros((int(Eigenvalue.shape[-1]),2))
+    d_weights = np.zeros((int(Eigenvalue.shape[-1]),2))
+    # bins for state counting
+    s_o = 0
+    s_uo = 0
+    p_o = 0
+    p_uo = 0
+    d_o = 0
+    d_uo = 0
+
+    #Trapezoidal Rule
+    occupied = Eigenvalue < E_Fermi 
+    sband_occ = 27.2114*sband[occupied]
+    E_occupied  = 27.2114*Eigenvalue[occupied]
+    ed = np.trapz(E_occupied*sband_occ,E_occupied)/np.trapz(sband_occ,E_occupied)
+    wd = np.trapz(E_occupied**2*sband_occ,E_occupied)/np.trapz(sband_occ,E_occupied)
+    print('--------------------------------------------')
+    print ('s-band center for occupied states = %1.2f eV' % ed)
+    print ('s-band width for occupied states = %1.2f eV' % np.sqrt(wd))
+
+    pband_occ = 27.2114*pband[occupied]
+    ed2 = np.trapz(E_occupied*pband_occ,E_occupied)/np.trapz(pband_occ,E_occupied)
+    wd2 = np.trapz(E_occupied**2*pband_occ,E_occupied)/np.trapz(pband_occ,E_occupied)
+    print ('p-band center for occupied states = %1.2f eV' % ed2)
+    print ('p-band width for occupied states = %1.2f eV' % np.sqrt(wd2))
+
+    dband_occ = 27.2114*dband[occupied]
+    ed4 = np.trapz(E_occupied*dband_occ,E_occupied)/np.trapz(dband_occ,E_occupied)
+    wd4 = np.trapz(E_occupied**2*dband_occ,E_occupied)/np.trapz(dband_occ,E_occupied)
+    print ('d-band center for occupied states = %1.2f eV' % ed4)
+    print ('P-band width for occupied states = %1.2f eV' % np.sqrt(wd4))
+
+    unoccupied = Eigenvalue > E_Fermi
+    sband_unocc = 27.2114*sband[unoccupied]
+    E_unoccupied  = 27.2114*Eigenvalue[unoccupied]
+    ed1 = np.trapz(E_unoccupied*sband_unocc,E_unoccupied)/np.trapz(sband_unocc,E_unoccupied)
+    wd1 = np.trapz(E_unoccupied**2*sband_unocc,E_unoccupied)/np.trapz(sband_unocc,E_unoccupied)
+    print ('s-band center for unoccupied states = %1.2f eV' % ed1)
+    print ('s-band width for unoccupied states = %1.2f eV' % np.sqrt(wd1))
+
+    pband_unocc = 27.2114*pband[unoccupied]
+    ed3 = np.trapz(E_unoccupied*pband_unocc,E_unoccupied)/np.trapz(pband_unocc,E_unoccupied)
+    wd3 = np.trapz(E_unoccupied**2*pband_unocc,E_unoccupied)/np.trapz(pband_unocc,E_unoccupied)
+    print ('p-band center for unoccupied states = %1.2f eV' % ed3)
+    print ('p-band width for unoccupied states = %1.2f eV' % np.sqrt(wd3))
+
+    dband_unocc = 27.2114*dband[unoccupied]
+    ed5 = np.trapz(E_unoccupied*dband_unocc,E_unoccupied)/np.trapz(dband_unocc,E_unoccupied)
+    wd5 = np.trapz(E_unoccupied**2*dband_unocc,E_unoccupied)/np.trapz(dband_unocc,E_unoccupied)
+    print ('d-band center for unoccupied states = %1.2f eV' % ed5)
+    print ('d-band width for unoccupied states = %1.2f eV' % np.sqrt(wd5))
+
+    print('--------------------------------------------')
+
+    # loop through each eigenvalue
+    for n in np.arange(int(Eigenvalue.shape[-1])):
+
+        # weighting occupied states
+        if Eigenvalue[n] < E_Fermi:
+            s_weights[n,0] = Eigenvalue[n]*sband[n]
+            p_weights[n,0] = Eigenvalue[n]*pband[n]
+            d_weights[n,0] = Eigenvalue[n]*dband[n]
+            
+            # counting occupied states
+            s_o += sband[n]
+            p_o += pband[n]
+            d_o += dband[n]
+            
+        # weighting unoccupied states
+        elif Eigenvalue[n] > E_Fermi:
+            s_weights[n,1] = Eigenvalue[n]*sband[n]
+            p_weights[n,1] = Eigenvalue[n]*pband[n]
+            d_weights[n,1] = Eigenvalue[n]*dband[n]
+            
+            # counting unoccupied states
+            s_uo += sband[n]
+            p_uo += pband[n]
+            d_uo += dband[n]
+            
+    # summing occupied state contributions
+    occ_s_center = s_weights[:,0].sum()/s_o
+    occ_s_center_ev = (27.2114)*s_weights[:,0].sum()/s_o
+    occ_p_center = p_weights[:,0].sum()/p_o
+    occ_p_center_ev = (27.2114)*p_weights[:,0].sum()/p_o
+    occ_d_center = d_weights[:,0].sum()/d_o
+    occ_d_center_ev = (27.2114)*d_weights[:,0].sum()/d_o
+    # summing unoccupied state contributions
+    unocc_s_center = s_weights[:,1].sum()/s_uo
+    unocc_s_center_ev = (27.2114)*s_weights[:,1].sum()/s_uo
+    unocc_p_center = p_weights[:,1].sum()/p_uo
+    unocc_p_center_ev = (27.2114)*p_weights[:,1].sum()/p_uo
+    unocc_d_center = d_weights[:,1].sum()/d_uo
+    unocc_d_center_ev = (27.2114)*d_weights[:,1].sum()/d_uo
+    # printing band center data
+    print('--------------------------------------------')
+    #print('Occupied s-band center = %.6f' % occ_s_center)
+    print('Occupied s-band center contribution = %.6f eV' % occ_s_center_ev)
+    #print('Occupied p-band center = %.6f' % occ_p_center)
+    print('Occupied p-band center contribution = %.6f eV' % occ_p_center_ev)
+    #print('Occupied d-band center = %.6f' % occ_d_center)
+    print('Occupied d-band center contribution = %.6f eV' % occ_d_center_ev)
+
+    #print('Unoccupied s-band center = %.6f' % unocc_s_center)
+    print('Unoccupied s-band center contribution = %.6f eV' % unocc_s_center_ev)
+    #print('Unoccupied p-band center = %.6f' % unocc_p_center)
+    print('Unoccupied p-band center contribution = %.6f eV' % unocc_p_center_ev)
+    #print('Unoccupied d-band center = %.6f' % unocc_d_center)
+    print('Unoccupied d-band center contribution = %.6f eV' % unocc_d_center_ev)
+    print('--------------------------------------------')
+        
+    # plotting
+    plt.figure(figsize=(8,5))
+
+    # Not normalized
+    # plt.bar(E,pband,width=0.005,color='r',label='p');
+    # plt.bar(E,sband,width=0.005,color='k',label='s');
+    # plt.bar(E,dband,width=0.005,color='y',label='d');
+
+    # Normalized
+
+    plt.bar(Eigenvalue-E_Fermi,sband,width=0.007,color='k',label='s');
+    plt.bar(Eigenvalue-E_Fermi,pband,width=0.004,color='r',label='p');
+    plt.bar(Eigenvalue-E_Fermi,dband,width=0.002,color='y',label='d');
+
+    # plotting band centers
+    plt.axvline(x=E_Fermi-E_Fermi,linestyle=':',color='k',label='Fermi Level')
+    plt.axvline(x=occ_p_center-E_Fermi,label='Occupied p-band center')
+    plt.axvline(x=unocc_s_center-E_Fermi,label='Unoccupied s-band center')
+    # figure adjustments
+    # plt.xlim([-0.35,0.65])
+    plt.xlabel('Eigenvalue [a.u.]')
+    plt.ylabel('Projected DOS [states/a.u. or states/a.u./volume]')
+    plt.legend()
+    plt.show()

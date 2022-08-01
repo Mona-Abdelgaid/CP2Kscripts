@@ -5,3 +5,4 @@ import utils
 #utils.gibbs_molecules('VIB-frequencies.mol-1.mol')
 #vib_list('OPT.o8435190.exp-1-14')
 #utils.thermo('vib.txt',873.15)
+utils.ldos('DOS_UNDOPED-PDOS_undoped-ALPHA_k1-1.pdos')
