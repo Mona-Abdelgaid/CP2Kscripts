@@ -82,9 +82,11 @@ The output of this function is the zero-point energy, heat capacity, and entropy
 
 - **Local electronic density of states at a particular site of a crystal**
 
-The ldos function requires .pdos file of a particular atom in a given system
-
     ```python
     CP2Kscripts.ldos('PDOS-ALPHA_k1-1.pdos')
     ```
+    
+The ldos function requires .pdos file of a particular atom in a given system
+
+
 
