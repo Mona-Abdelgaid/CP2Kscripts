@@ -15,9 +15,11 @@ setuptools.setup(name='CP2Kscripts',
                  entry_points={'console_scripts': [
                   'interp = CP2Kscripts.interp:main',
                   'shift_coord = CP2Kscripts.shift_coord:main',
-                  'thermo = CP2Kscripts.thermo:main',
-                  'gibbs_molecules = CP2Kscripts.gibbs_molecules:main',
                   'vib_list = CP2Kscripts.vib_list:main',
+                  'thermo = CP2Kscripts.thermo:main',
+                  'gibbs_surface_all_R = CP2Kscripts.gibbs_surface_all_R:main',
+                  'gibbs_surface = CP2Kscripts.gibbs_surface:main',
+                  'gibbs_molecules = CP2Kscripts.gibbs_molecules:main',
                   'ldos = CP2Kscripts.ldos:main'
                   ]},
                  url="https://github.com/Mona-Abdelgaid/CP2Kscripts",

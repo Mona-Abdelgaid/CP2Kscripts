@@ -484,3 +484,71 @@ def ldos(file):
     plt.ylabel('Projected DOS [states/a.u. or states/a.u./volume]')
     plt.legend()
     plt.show()
+
+#=======================================================================
+'''
+the equations were from:
+(1) Thermochemistry-ASE documentation-Campos-wiki pages: https://wiki.fysik.dtu.dk/ase/ase/thermochemistry/thermochemistry.html
+(2) C.J. Cramer. Essentials of Computational Chemistry, Second Edition. Wiley, 2004.
+(3) Thermochemistry in Gaussian - ELTE: http://organ.chem.elte.hu/farkas/teach/thermo.pdf
+'''
+def gibbs_surface_all_R(mol_file,temp): #This function is used for the catalyst/or molecule adsorbed on catalyst (with no minor imaginary frequencies)
+    kb = 8.61733E-05			#eV/K
+    pl_const = 4.135667662E-15		#eV.s
+    s_of_light = 2.998E10			#speed of light cm/s
+    pl_s = pl_const * s_of_light
+
+
+    with open(mol_file, 'r') as f: #the mol_file is the .mol file from vib freq. calc
+        vib = []
+        for line in f:
+            if 'VIB|Frequency (cm^-1)' in line:
+                data = line.split()  		#this splits all the lines that contains all the vibrational frequencies
+                vib.append(float(data[2]))   	#The following three lines stores a list of all freqs in vib
+                vib.append(float(data[3]))
+                vib.append(float(data[4]))
+
+    zpe_each = [0.5 * i * pl_s for i in vib]        #calculate the ZPE, eV
+    zpe = sum(zpe_each)
+
+    #heat capacity
+    cv_each = [(i * pl_s) / (math.exp((i * pl_s)/(kb * temp))-1) for i in vib]      #integrated heat capacity due to vibrational motion, eV
+    cv = sum(cv_each)
+
+    #entropy
+    sv_each = [((i * pl_s) / ((kb * temp) * (math.exp((i * pl_s)/(kb * temp))-1)))-math.log(1-math.exp((-i * pl_s)/(kb * temp))) for i in vib]          #calculate sv in eV
+    sv = kb * sum(sv_each)
+    t_sv = temp * sv
+
+    print("The zpe, cv, and ts are:" , zpe, cv, t_sv, 'eV')       #print TS
+
+#=======================================================================
+'''
+this one is for if there are small imaginaries that are removed, using the vib.txt file
+'''
+def gibbs_surface(vib_file,temp): #vibration out file name, vib.txt		
+    kb = 8.61733E-05			#eV/K
+    pl_const = 4.135667662E-15		#eV.s
+    s_of_light = 2.998E10			#speed of light cm/s
+    pl_s = pl_const * s_of_light
+
+    with open(vib_file, 'r') as f:
+        vib = []
+        for line in f:
+            data = line.split()                  #this splits all the lines that contains all the vibrational frequencies
+            vib.append(float(data[0]))           #The following three lines stores a list of all freqs in vib
+
+    zpe_each = [0.5 * i * pl_s for i in vib]        #calculate the ZPE, eV
+    zpe = sum(zpe_each)
+
+    #heat capacity
+    cv_each = [(i * pl_s) / (math.exp((i * pl_s)/(kb * temp))-1) for i in vib]      #integrated heat capacity due to vibrational motion, eV
+    cv = sum(cv_each)
+
+    #entropy
+    sv_each = [((i * pl_s) / ((kb * temp) * (math.exp((i * pl_s)/(kb * temp))-1)))-math.log(1-math.exp((-i * pl_s)/(kb * temp))) for i in vib]          #calculate sv in eV
+    sv = kb * sum(sv_each)
+    t_sv = temp * sv
+
+    print("The zpe, cv, and ts are:" , zpe, cv, t_sv, 'eV')       #print zpe, cv, and ts_v
+
